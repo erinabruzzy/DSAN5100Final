@@ -1,0 +1,28 @@
+---
+title: "Data Collection"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Collection
+
+```{r}
+# Data Source:
+# https://huggingface.co/datasets/felixludos/babel-briefings?clone=true
+
+library(jsonlite)
+library(dplyr)
+
+# path to data folder
+json_folder <- "//wsl.localhost/Ubuntu/home/erinbrzusek/.cache/huggingface/hub/datasets--felixludos--babel-briefings/snapshots/80c0f69c84ddc341a943cee55f7154b3c050c36a/data"
+
+```
+
+```{r}
+json_files <- list.files(json_folder, pattern = "\\.json$", full.names = TRUE)
+length(json_files)  # should be around 50
+
+```
