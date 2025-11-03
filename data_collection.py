@@ -12,8 +12,8 @@ print(subset[0])
 
 # break into chunks for upload to github
 split_size = 1000000 
-for i in range(0, len(ds), split_size):
-    chunk = subset.select(range(i, min(i + split_size, len(ds))))
+for i in range(0, len(subset), split_size):
+    chunk = subset.select(range(i, min(i + split_size, len(subset))))
     chunk.to_parquet(f"data/original_data_{i//split_size}.parquet")
 
 print("done")
