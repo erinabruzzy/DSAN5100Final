@@ -1,0 +1,290 @@
+---
+title: "Data Hypothesis Testing"
+format: html
+---
+
+
+Reading in Sentiment Data
+
+Due to the massive amounts of data in each parquet file, I chose to read in each file as a separate R statement for the sake of my laptop not exploding.
+```{r}
+library(arrow) #Library Needed to Read Parquet Files in R
+library(dplyr)
+options(arrow.skip_nul = TRUE)
+```
+
+
+
+Reading in Data by Country
+```{r}
+df_america <- read_parquet('data/us_data_final.parquet')
+head(df_america)
+```
+
+```{r}
+df_china <- read_parquet('data/china_data_final.parquet')
+head(df_china)
+```
+
+```{r}
+df_russia <- read_parquet('data/russia_data_final.parquet')
+head(df_russia)
+```
+
+```{r}
+df_argentina <- read_parquet('data/argentina_data_final.parquet')
+head(df_argentina)
+```
+
+```{r}
+df_india <- read_parquet('data/india_data_final.parquet')
+head(df_india)
+```
+
+```{r}
+df_italy <- read_parquet('data/italy_data_final.parquet')
+head(df_italy)
+```
+
+```{r}
+df_canada <- read_parquet('data/canada_data_final.parquet')
+head(df_canada)
+```
+
+
+
+
+1 Sample T-Test: Comparison of Sentiment Scores in US to Sentiment Scores in Russia
+
+Within our data, Sentiment in news articles is split into 3 sections: negative sentiment, neutral sentiment, and positive sentiment, but also gives us a 'compound sentiment score' that grades the aritcle's headline from a score of -1 to 1.   
+
+```{r}
+x <- sum(df_america$pos)
+y <- sum(df_america$neg)
+z <- sum(df_america$compound)
+
+(x-y)/z
+
+a <- sum(df_russia$pos)
+b <- sum(df_russia$neg)
+c <- sum(df_russia$compound)
+a
+b
+c
+(a-b)/c
+
+mean(df_america$compound)
+mean(df_russia$compound)
+```
+
+
+H0: The mean compound sentiment score for recorded articles in the United States before 2023 is 0 ($\mu_C =0$)
+Ha: The mean of the compound sentiment score for recorded articles in the United States before 2023 is not 0 ($\mu_C \neq 0$)
+
+
+Applying Bootstrap Sampling to The T-Test
+
+We took samples of N = 1000 articles repeated 1000 times for our 92,497 articles to use bootstrap sampling
+
+```{r}
+library(ggplot2)
+set.seed(5100)
+n <- 1000
+Num_Samples <- 1000
+
+US_Sentiment_Means <- numeric(Num_Samples)
+for(i in 1:Num_Samples){
+    bootstrap_samp <- sample(df_america$compound, size=n, replace=TRUE)
+    US_Sentiment_Means[i] <- mean(bootstrap_samp)
+}
+cat("US Bootstrap Mean Compund Sentiment Score Summary")
+summary(US_Sentiment_Means)
+
+
+#Histogram of Bootstrap Means
+hist(US_Sentiment_Means, main = "Bootstrap Mean Distribution for US Sentiment Scores", xlab= "Sample Mean Compound Sentiment Score", col="blue", breaks=25)
+```
+
+```{r}
+t.test(US_Sentiment_Means, mu = 0)
+```
+
+If we assume alpha = 0.05, the p-value being less than 2.2e-16 allows us to reject our null hypothesis and conclude that in the United States, the average compound sentiment score of news article headlines is not 0.  Futhermore, because our t-test provided us with a 95% confidence interval due to our bootstrap sampling, we can also conclude that we are 95% confident that the true average compound sentiment score for news articles in the United States is between 0.007 and 0.009.
+
+
+2 Sample T-Test: United States Compound Sentiment Scores vs Russia Compound Sentiment Scores
+
+While our 95% confidence interval shows us that the true mean compound sentiment score of the US article headlines is between 0.007 and 0.009, we're curious to see how that compares to another country's headlines.  For this 2-Sample T-Test, we'll be comparing the mean compound sentiment scores of article headlines in the United States with the mean compound sentiment scores of Russia's headlines using the same bootstrap sampling parameters as our previous example with the United States.  
+
+H0: The difference between mean compound sentiment scores for articles from Russia and articles from the United States is 0
+Ha:  The difference between mean compound sentiment scores for articles from Russia and articles from the United States is not 0
+
+```{r}
+set.seed(5100)
+n <- 1000
+Num_Samples <- 1000
+
+Russian_Sentiment_Means <- numeric(Num_Samples)
+for(i in 1:Num_Samples){
+    bootstrap_samp <- sample(df_russia$compound, size=n, replace=TRUE)
+    Russian_Sentiment_Means[i] <- mean(bootstrap_samp)
+}
+cat("Russian Bootstrap Mean Compund Sentiment Score Summary")
+summary(Russian_Sentiment_Means)
+```
+
+```{r}
+t.test(Russian_Sentiment_Means, US_Sentiment_Means)
+```
+
+        Welch Two Sample t-test
+
+data:  Russian_Sentiment_Means and US_Sentiment_Means
+t = 33.217, df = 1995.9, p-value < 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.01569524 0.01766482
+sample estimates:
+  mean of x   mean of y 
+0.025119650 0.008439616 
+
+Because our p-value is less than 2.2e-16, we can reject our null hypothesis at the 0.05 level and conclude that there is statistical evidence that the mean compound sentiment score of Russian article headlines is different than the mean compound sentiment score of United States article headlines.  Furthermore, based on our 95% confidence interval, we can also conclude that the true difference in mean compound sentiment scores between Russian article headlines and US article headlines is between 0.015 and 0.017
+
+
+ANOVA 1: Does Compund Sentiment Score Differ by Country?
+
+While it is interesting that there is statistical evidence of a difference in mean compound sentiment scores between Russian article headlines and United States article headlines, We are curious to see if this applies to every country.  Therefore, we decided to combine all of our data frames into one and ran an ANOVA test to see if this applies to every country.
+
+H0: All counties in our data have equal mean compound sentiment scores 
+Ha: At least one country has a different mean compound sentiment score
+
+```{r}
+df_all_countries <- rbind(df_america, df_china, df_russia, df_canada, df_india, df_italy, df_argentina)
+counts <- as.data.frame(table(df_all_countries$location))
+counts
+
+
+anova_compound_country <- aov(compound ~location, data=df_all_countries)
+summary(anova_compound_country)
+
+TukeyHSD(anova_compound_country)
+```
+
+Conclusion: We can reject H0 and conclude that there are statistically significant differences in mean compound sentiment scores across countries, with our TukeyHSD shows which specific country pairs differ significantly.
+
+ANOVA 2: Does An Article's Category Determine Its Compound Sentiment Score?
+
+After proving that where an article is published affects its Mean Compound Sentiment Score, we became curious to see if the category/genre also affects an article's compound sentiment score.
+
+H0: All article categories have equal mean sentiment
+Ha: At least one article category has a different mean compound sentiment score
+
+```{r}
+anova_compound_category <- aov(compound ~ category, data = df_all_countries)
+summary(anova_compound_category)
+TukeyHSD(anova_compound_category)
+```
+
+Conclusion: Reject Null Hypothesis, Article category significantly affects compound sentiment scores
+
+
+Chi-Square Test of Independence: Comparing Sentiment Category to Bias Category
+
+H0: Sentiment category and Bias category are independent
+Ha: Sentiment category and bias category are associated
+
+```{r}
+all_sentiment_bias <- table(df_all_countries$sentiment_category, df_all_countries$bias_category)
+table(df_all_countries$sentiment_category)
+table(df_all_countries$bias_category)
+chi_sentiment_bias <- chisq.test(all_sentiment_bias)
+chi_sentiment_bias
+print(round(chi_sentiment_bias$expected))
+print(round(chi_sentiment_bias$residuals))
+```
+
+Conclusion: they are associated
+
+Chi-Square Test 2: Genre X Sentiment Category
+
+```{r}
+counts <- t(as.data.frame(table(df_america$category)))
+counts
+```
+
+
+```{r}
+
+all_sentiment_genre <- table(df_all_countries$category, df_all_countries$sentiment_category)
+
+
+chi_sentiment_genre <- chisq.test(all_sentiment_genre)
+chi_sentiment_genre
+summary(chi_sentiment_genre)
+```
+
+Time Series
+
+```{r}
+library(lubridate)
+library(Kendall)
+df_all_countries$publishedAt <- as.Date(df_all_countries$publishedAt)
+df_all_countries$year_month <- floor_date(df_all_countries$publishedAt, "month")
+
+monthly_sent <- df_all_countries |> group_by(year_month) |> summarize(monthly_mean = mean(compound, na.rm=TRUE))
+
+trend_model <- lm(monthly_mean ~ year_month, data=monthly_sent)
+summary(trend_model)
+MannKendall(monthly_sent$monthly_mean)
+```
+
+
+```{r}
+monthly_sent$month <- factor(month(monthly_sent$year_month), labels = month.abb)
+
+seasonal_anova <- aov(monthly_mean ~ month, data=monthly_sent)
+
+summary(seasonal_anova)
+TukeyHSD(seasonal_anova)
+
+plot(monthly_sent$month, monthly_sent$monthly_mean, main="Monthly Mean Sentiment", xlab="Month", ylab="Sentiment")
+```
+
+```{r}
+monthly_country <- df_all_countries |> group_by(location, year_month) |> summarize(monthly_mean = mean(compound, na.rm=TRUE)) |> ungroup()
+
+monthly_country$time_index <- as.numeric(monthly_country$year_month)
+
+trend_country_model <- lm(monthly_mean ~ time_index * location, data=monthly_country)
+
+summary(trend_country_model)
+
+```
+
+```{r}
+
+monthly_bias <- df_all_countries |> group_by(year_month) |> summarize(monthly_mean = mean(bias_score, na.rm=TRUE))
+
+trend_model <- lm(monthly_mean ~ year_month, data=monthly_bias)
+summary(trend_model)
+MannKendall(monthly_bias$monthly_mean)
+
+monthly_bias$month <- factor(month(monthly_bias$year_month), labels = month.abb)
+
+seasonal_anova_bias <- aov(monthly_mean ~ month, data=monthly_bias)
+
+summary(seasonal_anova_bias)
+TukeyHSD(seasonal_anova_bias)
+
+plot(monthly_bias$month, monthly_bias$monthly_mean, main="Monthly Mean Bias Scores", xlab="Month", ylab="Bias Scores")
+
+
+monthly_country <- df_all_countries |> group_by(location, year_month) |> summarize(monthly_mean = mean(bias_score, na.rm=TRUE)) |> ungroup()
+
+monthly_country$time_index <- as.numeric(monthly_country$year_month)
+
+trend_country_model <- lm(monthly_mean ~ time_index * location, data=monthly_country)
+
+summary(trend_country_model)
+
+```

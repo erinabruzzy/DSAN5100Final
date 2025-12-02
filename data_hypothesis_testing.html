@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Data Hypothesis Testing</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="data_hypothesis_testing_files/libs/clipboard/clipboard.min.js"></script>
+<script src="data_hypothesis_testing_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="data_hypothesis_testing_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="data_hypothesis_testing_files/libs/quarto-html/popper.min.js"></script>
+<script src="data_hypothesis_testing_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="data_hypothesis_testing_files/libs/quarto-html/anchor.min.js"></script>
+<link href="data_hypothesis_testing_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="data_hypothesis_testing_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="data_hypothesis_testing_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="data_hypothesis_testing_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="data_hypothesis_testing_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Data Hypothesis Testing</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Reading in Sentiment Data</p>
+<p>Due to the massive amounts of data in each parquet file, I chose to read in each file as a separate R statement for the sake of my laptop not exploding.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow) <span class="co">#Library Needed to Read Parquet Files in R</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'arrow'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:utils':
+
+    timestamp</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">arrow.skip_nul =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Reading in Data by Country</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>df_america <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/us_data_final.parquet'</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_america)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1   816 2020-08-07T11… Minneapolis … us            United … general   2020     8
+2   901 2020-08-07T11… Google News   us            United … general   2020     8
+3   961 2020-08-07T11… CNBC          us            United … general   2020     8
+4  1054 2020-08-07T12… Google News   us            United … general   2020     8
+5  1147 2020-08-07T12… CNET          us            United … general   2020     8
+6  1335 2020-08-07T13… The Washingt… us            United … general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>df_china <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/china_data_final.parquet'</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_china)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1   246 2020-08-07T07… Sina.com.cn   cn            China    general   2020     8
+2   384 2020-08-07T08… Sohu.com      cn            China    general   2020     8
+3   421 2020-08-07T09… Sina.com.cn   cn            China    general   2020     8
+4   437 2020-08-07T09… Chinanews.com cn            China    general   2020     8
+5   621 2020-08-07T10… Sina.com.cn   cn            China    general   2020     8
+6   631 2020-08-07T10… Reuters       cn            China    general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_russia <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/russia_data_final.parquet'</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_russia)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1   802 2020-08-07T11… Lenta         ru            Russian… general   2020     8
+2   809 2020-08-07T11… Motor.ru      ru            Russian… general   2020     8
+3   853 2020-08-07T11… Sportbox.ru   ru            Russian… general   2020     8
+4   875 2020-08-07T11… Google News   ru            Russian… general   2020     8
+5   918 2020-08-07T11… Gazeta.ru     ru            Russian… general   2020     8
+6   968 2020-08-07T11… Vc.ru         ru            Russian… general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>df_argentina <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/argentina_data_final.parquet'</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_argentina)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in FUN(X[[i]], ...): Stripping '\0' (nul) from character vector</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1    78 2020-08-07T03… RPP           ar            Argenti… general   2020     8
+2    80 2020-08-07T03… La Nacion     ar            Argenti… general   2020     8
+3    82 2020-08-07T03… La Voz del I… ar            Argenti… general   2020     8
+4   144 2020-08-07T06… Depor.com     ar            Argenti… general   2020     8
+5   349 2020-08-07T08… Infobae       ar            Argenti… general   2020     8
+6   535 2020-08-07T09… Infobae       ar            Argenti… general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>df_india <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/india_data_final.parquet'</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_india)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1   486 2020-08-07T09… The Indian E… in            India    general   2020     8
+2   648 2020-08-07T10… Hindustan Ti… in            India    general   2020     8
+3   693 2020-08-07T10… Zoom          in            India    general   2020     8
+4   791 2020-08-07T11… Moneycontrol  in            India    general   2020     8
+5   902 2020-08-07T11… NDTV News     in            India    general   2020     8
+6   937 2020-08-07T11… Livemint      in            India    general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>df_italy <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/italy_data_final.parquet'</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_italy)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in FUN(X[[i]], ...): Stripping '\0' (nul) from character vector</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1   916 2020-08-07T11… Lanazione.it  it            Italy    general   2020     8
+2  1064 2020-08-07T12… Trend-online… it            Italy    general   2020     8
+3  1116 2020-08-07T12… Ilfattoquoti… it            Italy    general   2020     8
+4  1252 2020-08-07T13… Ilmessaggero… it            Italy    general   2020     8
+5  1362 2020-08-07T13… Liberoquotid… it            Italy    general   2020     8
+6  1379 2020-08-07T13… Tg24.sky.it   it            Italy    general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>df_canada <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">'data/canada_data_final.parquet'</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_canada)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 16
+     ID publishedAt    `source-name` location_code location category  year month
+  &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt; &lt;int&gt;
+1    44 2020-08-07T01… Variety       ca            Canada   general   2020     8
+2   107 2020-08-07T04… Global Villa… ca            Canada   general   2020     8
+3   206 2020-08-07T07… Sportsnet.ca  ca            Canada   general   2020     8
+4   289 2020-08-07T08… Brandon Sun   ca            Canada   general   2020     8
+5   606 2020-08-07T10… Net Newsledg… ca            Canada   general   2020     8
+6   612 2020-08-07T10… TheChronicle… ca            Canada   general   2020     8
+# ℹ 8 more variables: new_title &lt;chr&gt;, neg &lt;dbl&gt;, neu &lt;dbl&gt;, pos &lt;dbl&gt;,
+#   compound &lt;dbl&gt;, sentiment_category &lt;chr&gt;, bias_category &lt;chr&gt;,
+#   bias_score &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p>1 Sample T-Test: Comparison of Sentiment Scores in US to Sentiment Scores in Russia</p>
+<p>Within our data, Sentiment in news articles is split into 3 sections: negative sentiment, neutral sentiment, and positive sentiment, but also gives us a ‘compound sentiment score’ that grades the aritcle’s headline from a score of -1 to 1.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">sum</span>(df_america<span class="sc">$</span>pos)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">sum</span>(df_america<span class="sc">$</span>neg)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>z <span class="ot">&lt;-</span> <span class="fu">sum</span>(df_america<span class="sc">$</span>compound)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>(x<span class="sc">-</span>y)<span class="sc">/</span>z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3392092</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">sum</span>(df_russia<span class="sc">$</span>pos)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">sum</span>(df_russia<span class="sc">$</span>neg)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>c <span class="ot">&lt;-</span> <span class="fu">sum</span>(df_russia<span class="sc">$</span>compound)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7831.261</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>b</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 6727.482</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>c</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2873.163</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>(a<span class="sc">-</span>b)<span class="sc">/</span>c</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3841686</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(df_america<span class="sc">$</span>compound)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.008755018</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(df_russia<span class="sc">$</span>compound)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.02533765</code></pre>
+</div>
+</div>
+<p>H0: The mean compound sentiment score for recorded articles in the United States before 2023 is 0 (<span class="math inline">\(\mu_C =0\)</span>) Ha: The mean of the compound sentiment score for recorded articles in the United States before 2023 is not 0 (<span class="math inline">\(\mu_C \neq 0\)</span>)</p>
+<p>Applying Bootstrap Sampling to The T-Test</p>
+<p>We took samples of N = 1000 articles repeated 1000 times for our 92,497 articles to use bootstrap sampling</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5100</span>)</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>Num_Samples <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>US_Sentiment_Means <span class="ot">&lt;-</span> <span class="fu">numeric</span>(Num_Samples)</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>Num_Samples){</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    bootstrap_samp <span class="ot">&lt;-</span> <span class="fu">sample</span>(df_america<span class="sc">$</span>compound, <span class="at">size=</span>n, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>    US_Sentiment_Means[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(bootstrap_samp)</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"US Bootstrap Mean Compund Sentiment Score Summary"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>US Bootstrap Mean Compund Sentiment Score Summary</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(US_Sentiment_Means)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-0.029902  0.000768  0.008018  0.008440  0.016070  0.046042 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Histogram of Bootstrap Means</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(US_Sentiment_Means, <span class="at">main =</span> <span class="st">"Bootstrap Mean Distribution for US Sentiment Scores"</span>, <span class="at">xlab=</span> <span class="st">"Sample Mean Compound Sentiment Score"</span>, <span class="at">col=</span><span class="st">"blue"</span>, <span class="at">breaks=</span><span class="dv">25</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="data_hypothesis_testing_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(US_Sentiment_Means, <span class="at">mu =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  US_Sentiment_Means
+t = 24.164, df = 999, p-value &lt; 2.2e-16
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ 0.007754252 0.009124981
+sample estimates:
+  mean of x 
+0.008439616 </code></pre>
+</div>
+</div>
+<p>If we assume alpha = 0.05, the p-value being less than 2.2e-16 allows us to reject our null hypothesis and conclude that in the United States, the average compound sentiment score of news article headlines is not 0. Futhermore, because our t-test provided us with a 95% confidence interval due to our bootstrap sampling, we can also conclude that we are 95% confident that the true average compound sentiment score for news articles in the United States is between 0.007 and 0.009.</p>
+<p>2 Sample T-Test: United States Compound Sentiment Scores vs Russia Compound Sentiment Scores</p>
+<p>While our 95% confidence interval shows us that the true mean compound sentiment score of the US article headlines is between 0.007 and 0.009, we’re curious to see how that compares to another country’s headlines. For this 2-Sample T-Test, we’ll be comparing the mean compound sentiment scores of article headlines in the United States with the mean compound sentiment scores of Russia’s headlines using the same bootstrap sampling parameters as our previous example with the United States.</p>
+<p>H0: The difference between mean compound sentiment scores for articles from Russia and articles from the United States is 0 Ha: The difference between mean compound sentiment scores for articles from Russia and articles from the United States is not 0</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5100</span>)</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>Num_Samples <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>Russian_Sentiment_Means <span class="ot">&lt;-</span> <span class="fu">numeric</span>(Num_Samples)</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>Num_Samples){</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>    bootstrap_samp <span class="ot">&lt;-</span> <span class="fu">sample</span>(df_russia<span class="sc">$</span>compound, <span class="at">size=</span>n, <span class="at">replace=</span><span class="cn">TRUE</span>)</span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>    Russian_Sentiment_Means[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(bootstrap_samp)</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Russian Bootstrap Mean Compund Sentiment Score Summary"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Russian Bootstrap Mean Compund Sentiment Score Summary</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(Russian_Sentiment_Means)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+-0.01431  0.01809  0.02500  0.02512  0.03231  0.06056 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">t.test</span>(Russian_Sentiment_Means, US_Sentiment_Means)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Welch Two Sample t-test
+
+data:  Russian_Sentiment_Means and US_Sentiment_Means
+t = 33.217, df = 1995.9, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.01569524 0.01766482
+sample estimates:
+  mean of x   mean of y 
+0.025119650 0.008439616 </code></pre>
+</div>
+</div>
+<pre><code>    Welch Two Sample t-test</code></pre>
+<p>data: Russian_Sentiment_Means and US_Sentiment_Means t = 33.217, df = 1995.9, p-value &lt; 2.2e-16 alternative hypothesis: true difference in means is not equal to 0 95 percent confidence interval: 0.01569524 0.01766482 sample estimates: mean of x mean of y 0.025119650 0.008439616</p>
+<p>Because our p-value is less than 2.2e-16, we can reject our null hypothesis at the 0.05 level and conclude that there is statistical evidence that the mean compound sentiment score of Russian article headlines is different than the mean compound sentiment score of United States article headlines. Furthermore, based on our 95% confidence interval, we can also conclude that the true difference in mean compound sentiment scores between Russian article headlines and US article headlines is between 0.015 and 0.017</p>
+<p>ANOVA 1: Does Compund Sentiment Score Differ by Country?</p>
+<p>While it is interesting that there is statistical evidence of a difference in mean compound sentiment scores between Russian article headlines and United States article headlines, We are curious to see if this applies to every country. Therefore, we decided to combine all of our data frames into one and ran an ANOVA test to see if this applies to every country.</p>
+<p>H0: All counties in our data have equal mean compound sentiment scores Ha: At least one country has a different mean compound sentiment score</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>df_all_countries <span class="ot">&lt;-</span> <span class="fu">rbind</span>(df_america, df_china, df_russia, df_canada, df_india, df_italy, df_argentina)</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">table</span>(df_all_countries<span class="sc">$</span>location))</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                Var1   Freq
+1          Argentina 119033
+2             Canada 127445
+3              China  91555
+4              India 123754
+5              Italy 129005
+6 Russian Federation 113395
+7      United States  92497</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>anova_compound_country <span class="ot">&lt;-</span> <span class="fu">aov</span>(bias_score <span class="sc">~</span>location, <span class="at">data=</span>df_all_countries)</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(anova_compound_country)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                Df Sum Sq Mean Sq F value Pr(&gt;F)    
+location         6   4300   716.7    1290 &lt;2e-16 ***
+Residuals   796677 442534     0.6                   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">TukeyHSD</span>(anova_compound_country)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Tukey multiple comparisons of means
+    95% family-wise confidence level
+
+Fit: aov(formula = bias_score ~ location, data = df_all_countries)
+
+$location
+                                          diff          lwr           upr
+Canada-Argentina                  0.0049293484 -0.003927939  0.0137866355
+China-Argentina                  -0.0103505476 -0.020009918 -0.0006911772
+India-Argentina                   0.1874985208  0.178577673  0.1964193686
+Italy-Argentina                   0.1157235395  0.106892153  0.1245549258
+Russian Federation-Argentina      0.0041463535 -0.004972082  0.0132647886
+United States-Argentina           0.1137484879  0.104116960  0.1233800161
+China-Canada                     -0.0152798960 -0.024799664 -0.0057601282
+India-Canada                      0.1825691724  0.173799676  0.1913386689
+Italy-Canada                      0.1107941911  0.102115716  0.1194726660
+Russian Federation-Canada        -0.0007829949 -0.009753413  0.0081874232
+United States-Canada              0.1088191395  0.099327623  0.1183106557
+India-China                       0.1978490684  0.188270135  0.2074280021
+Italy-China                       0.1260740871  0.116578413  0.1355697613
+Russian Federation-China          0.0144969011  0.004733689  0.0242601128
+United States-China               0.1240990355  0.113854975  0.1343430962
+Italy-India                      -0.0717749813 -0.080518317 -0.0630316456
+Russian Federation-India         -0.1833521673 -0.192385350 -0.1743189844
+United States-India              -0.0737500329 -0.083300890 -0.0641991758
+Russian Federation-Italy         -0.1115771860 -0.120522031 -0.1026323411
+United States-Italy              -0.0019750516 -0.011442402  0.0074922990
+United States-Russian Federation  0.1096021344  0.099866468  0.1193378010
+                                     p adj
+Canada-Argentina                 0.6556462
+China-Argentina                  0.0264772
+India-Argentina                  0.0000000
+Italy-Argentina                  0.0000000
+Russian Federation-Argentina     0.8327740
+United States-Argentina          0.0000000
+China-Canada                     0.0000456
+India-Canada                     0.0000000
+Italy-Canada                     0.0000000
+Russian Federation-Canada        0.9999762
+United States-Canada             0.0000000
+India-China                      0.0000000
+Italy-China                      0.0000000
+Russian Federation-China         0.0002419
+United States-China              0.0000000
+Italy-India                      0.0000000
+Russian Federation-India         0.0000000
+United States-India              0.0000000
+Russian Federation-Italy         0.0000000
+United States-Italy              0.9963661
+United States-Russian Federation 0.0000000</code></pre>
+</div>
+</div>
+<p>ANOVA 2: Does An Article’s Category Determine Its Compound Sentiment Score?</p>
+<p>After proving that where an article is published affects its Mean Compound Sentiment Score, we became curious to see if the category/genre also affects an article’s compound sentiment score.</p>
+<p>H0: All article categories have equal mean sentiment Ha: At least one article category has a different mean compound sentiment score</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>anova_compound_category <span class="ot">&lt;-</span> <span class="fu">aov</span>(compound <span class="sc">~</span> category, <span class="at">data =</span> df_all_countries)</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(anova_compound_category)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                Df Sum Sq Mean Sq F value Pr(&gt;F)    
+category         6    695  115.84     864 &lt;2e-16 ***
+Residuals   796677 106814    0.13                   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">TukeyHSD</span>(anova_compound_category)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Tukey multiple comparisons of means
+    95% family-wise confidence level
+
+Fit: aov(formula = compound ~ category, data = df_all_countries)
+
+$category
+                                 diff           lwr          upr     p adj
+entertainment-business    0.011494967  0.0076435149  0.015346418 0.0000000
+general-business         -0.063077912 -0.0680756201 -0.058080204 0.0000000
+health-business          -0.055981705 -0.0606200871 -0.051343323 0.0000000
+science-business         -0.009106553 -0.0140384813 -0.004174625 0.0000011
+sports-business           0.026879582  0.0228657289  0.030893436 0.0000000
+technology-business       0.016613120  0.0123782582  0.020847983 0.0000000
+general-entertainment    -0.074572879 -0.0794806100 -0.069665148 0.0000000
+health-entertainment     -0.067476672 -0.0720179631 -0.062935380 0.0000000
+science-entertainment    -0.020601520 -0.0254422486 -0.015760791 0.0000000
+sports-entertainment      0.015384616  0.0114833646  0.019285867 0.0000000
+technology-entertainment  0.005118154  0.0009898614  0.009246446 0.0047973
+health-general            0.007096207  0.0015494304  0.012642984 0.0030793
+science-general           0.053971359  0.0481768737  0.059765845 0.0000000
+sports-general            0.089957494  0.0849213090  0.094993680 0.0000000
+technology-general        0.079691033  0.0744769936  0.084905072 0.0000000
+science-health            0.046875152  0.0413875694  0.052362735 0.0000000
+sports-health             0.082861287  0.0781814726  0.087541102 0.0000000
+technology-health         0.072594826  0.0677241269  0.077465524 0.0000000
+sports-science            0.035986135  0.0310152203  0.040957050 0.0000000
+technology-science        0.025719673  0.0205686509  0.030870696 0.0000000
+technology-sports        -0.010266462 -0.0145466646 -0.005986259 0.0000000</code></pre>
+</div>
+</div>
+<p>Conclusion: Reject Null Hypothesis</p>
+<p>Chi-Square Test of Independence: Comparing Sentiment Category to Bias Category</p>
+<p>WHile it is intersting</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>all_sentiment_bias <span class="ot">&lt;-</span> <span class="fu">table</span>(df_all_countries<span class="sc">$</span>sentiment_category, df_all_countries<span class="sc">$</span>bias_category)</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df_all_countries<span class="sc">$</span>sentiment_category)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+negative  neutral positive 
+  198020   329671   268993 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df_all_countries<span class="sc">$</span>bias_category)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Biased Non-biased 
+    382575     414109 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>chi_sentiment_bias <span class="ot">&lt;-</span> <span class="fu">chisq.test</span>(all_sentiment_bias)</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>chi_sentiment_bias</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test
+
+data:  all_sentiment_bias
+X-squared = 2024.5, df = 2, p-value &lt; 2.2e-16</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(chi_sentiment_bias<span class="sc">$</span>expected))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          
+           Biased Non-biased
+  negative  95091     102929
+  neutral  158311     171360
+  positive 129173     139820</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(chi_sentiment_bias<span class="sc">$</span>residuals))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          
+           Biased Non-biased
+  negative     -3          2
+  neutral     -21         20
+  positive     25        -24</code></pre>
+</div>
+</div>
+<p>Chi-Square Test 2: Genre X Sentiment Category</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">as.data.frame</span>(<span class="fu">table</span>(df_america<span class="sc">$</span>category)))</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>counts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1]       [,2]            [,3]      [,4]     [,5]      [,6]    
+Var1 "business" "entertainment" "general" "health" "science" "sports"
+Freq "19089"    "19840"         " 6194"   "17408"  " 2895"   "21248" 
+     [,7]        
+Var1 "technology"
+Freq " 5823"     </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>all_sentiment_genre <span class="ot">&lt;-</span> <span class="fu">table</span>(df_all_countries<span class="sc">$</span>category, df_all_countries<span class="sc">$</span>sentiment_category)</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a>chi_sentiment_genre <span class="ot">&lt;-</span> <span class="fu">chisq.test</span>(all_sentiment_genre)</span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a>chi_sentiment_genre</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Pearson's Chi-squared test
+
+data:  all_sentiment_genre
+X-squared = 10438, df = 12, p-value &lt; 2.2e-16</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(chi_sentiment_genre)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Length Class  Mode     
+statistic  1     -none- numeric  
+parameter  1     -none- numeric  
+p.value    1     -none- numeric  
+method     1     -none- character
+data.name  1     -none- character
+observed  21     table  numeric  
+expected  21     -none- numeric  
+residuals 21     table  numeric  
+stdres    21     table  numeric  </code></pre>
+</div>
+</div>
+<p>Time Series</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'lubridate'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:arrow':
+
+    duration</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    date, intersect, setdiff, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Kendall)</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>df_all_countries<span class="sc">$</span>publishedAt <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(df_all_countries<span class="sc">$</span>publishedAt)</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>df_all_countries<span class="sc">$</span>year_month <span class="ot">&lt;-</span> <span class="fu">floor_date</span>(df_all_countries<span class="sc">$</span>publishedAt, <span class="st">"month"</span>)</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>monthly_sent <span class="ot">&lt;-</span> df_all_countries <span class="sc">|&gt;</span> <span class="fu">group_by</span>(year_month) <span class="sc">|&gt;</span> <span class="fu">summarize</span>(<span class="at">monthly_mean =</span> <span class="fu">mean</span>(compound, <span class="at">na.rm=</span><span class="cn">TRUE</span>))</span>
+<span id="cb83-6"><a href="#cb83-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-7"><a href="#cb83-7" aria-hidden="true" tabindex="-1"></a>trend_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(monthly_mean <span class="sc">~</span> year_month, <span class="at">data=</span>monthly_sent)</span>
+<span id="cb83-8"><a href="#cb83-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(trend_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = monthly_mean ~ year_month, data = monthly_sent)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.35136 -0.10553  0.01256  0.05302  0.43871 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)   
+(Intercept)  9.351e-01  3.430e-01   2.727  0.00799 **
+year_month  -4.857e-05  1.938e-05  -2.506  0.01442 * 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.1451 on 74 degrees of freedom
+  (1 observation deleted due to missingness)
+Multiple R-squared:  0.07822,   Adjusted R-squared:  0.06576 
+F-statistic: 6.279 on 1 and 74 DF,  p-value: 0.01442</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MannKendall</span>(monthly_sent<span class="sc">$</span>monthly_mean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tau = -0.0244, 2-sided pvalue =0.7606</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>monthly_sent<span class="sc">$</span>month <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">month</span>(monthly_sent<span class="sc">$</span>year_month), <span class="at">labels =</span> month.abb)</span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>seasonal_anova <span class="ot">&lt;-</span> <span class="fu">aov</span>(monthly_mean <span class="sc">~</span> month, <span class="at">data=</span>monthly_sent)</span>
+<span id="cb87-4"><a href="#cb87-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb87-5"><a href="#cb87-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(seasonal_anova)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            Df Sum Sq Mean Sq F value Pr(&gt;F)
+month       11 0.2584 0.02349   1.051  0.414
+Residuals   64 1.4309 0.02236               
+1 observation deleted due to missingness</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="fu">TukeyHSD</span>(seasonal_anova)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Tukey multiple comparisons of means
+    95% family-wise confidence level
+
+Fit: aov(formula = monthly_mean ~ month, data = monthly_sent)
+
+$month
+                 diff        lwr       upr     p adj
+Feb-Jan  0.1049557649 -0.1878437 0.3977553 0.9857366
+Mar-Jan -0.0358216354 -0.3286211 0.2569779 0.9999995
+Apr-Jan  0.1303651540 -0.1767255 0.4374558 0.9506824
+May-Jan  0.0039857508 -0.2781629 0.2861344 1.0000000
+Jun-Jan -0.0300331697 -0.3121818 0.2521155 0.9999999
+Jul-Jan  0.0753050463 -0.2174944 0.3681045 0.9991778
+Aug-Jan  0.0249403025 -0.2821504 0.3320310 1.0000000
+Sep-Jan -0.0203612867 -0.3131608 0.2724382 1.0000000
+Oct-Jan -0.0208372519 -0.3029859 0.2613114 1.0000000
+Nov-Jan  0.0190527822 -0.2482354 0.2863409 1.0000000
+Dec-Jan  0.1351291641 -0.1576703 0.4279287 0.9149961
+Mar-Feb -0.1407774002 -0.4335769 0.1520221 0.8910216
+Apr-Feb  0.0254093891 -0.2816813 0.3325001 1.0000000
+May-Feb -0.1009700141 -0.3831187 0.1811786 0.9859210
+Jun-Feb -0.1349889345 -0.4171376 0.1471597 0.8941647
+Jul-Feb -0.0296507186 -0.3224502 0.2631488 0.9999999
+Aug-Feb -0.0800154624 -0.3871062 0.2270752 0.9990730
+Sep-Feb -0.1253170516 -0.4181165 0.1674824 0.9478772
+Oct-Feb -0.1257930168 -0.4079417 0.1563556 0.9317228
+Nov-Feb -0.0859029827 -0.3531911 0.1813852 0.9941136
+Dec-Feb  0.0301733992 -0.2626261 0.3229729 0.9999999
+Apr-Mar  0.1661867893 -0.1409039 0.4732775 0.7923890
+May-Mar  0.0398073862 -0.2423413 0.3219560 0.9999979
+Jun-Mar  0.0057884657 -0.2763602 0.2879371 1.0000000
+Jul-Mar  0.1111266816 -0.1816728 0.4039262 0.9778940
+Aug-Mar  0.0607619378 -0.2463288 0.3678526 0.9999338
+Sep-Mar  0.0154603487 -0.2773391 0.3082598 1.0000000
+Oct-Mar  0.0149843835 -0.2671643 0.2971330 1.0000000
+Nov-Mar  0.0548744176 -0.2124137 0.3221626 0.9999047
+Dec-Mar  0.1709507995 -0.1218487 0.4637503 0.7044562
+May-Apr -0.1263794032 -0.4233323 0.1705735 0.9498309
+Jun-Apr -0.1603983236 -0.4573512 0.1365546 0.7943258
+Jul-Apr -0.0550601077 -0.3621508 0.2520306 0.9999754
+Aug-Apr -0.1054248515 -0.4261706 0.2153209 0.9929040
+Sep-Apr -0.1507264406 -0.4578171 0.1563643 0.8770805
+Oct-Apr -0.1512024058 -0.4481553 0.1457505 0.8489500
+Nov-Apr -0.1113123718 -0.3941836 0.1715588 0.9711111
+Dec-Apr  0.0047640101 -0.3023267 0.3118547 1.0000000
+Jun-May -0.0340189205 -0.3050986 0.2370607 0.9999994
+Jul-May  0.0713192955 -0.2108294 0.3534679 0.9992998
+Aug-May  0.0209545516 -0.2759983 0.3179074 1.0000000
+Sep-May -0.0243470375 -0.3064957 0.2578016 1.0000000
+Oct-May -0.0248230027 -0.2959027 0.2462566 1.0000000
+Nov-May  0.0150670314 -0.2405093 0.2706434 1.0000000
+Dec-May  0.1311434133 -0.1510052 0.4132921 0.9111671
+Jul-Jun  0.1053382159 -0.1768104 0.3874869 0.9804758
+Aug-Jun  0.0549734721 -0.2419794 0.3519264 0.9999660
+Sep-Jun  0.0096718830 -0.2724768 0.2918205 1.0000000
+Oct-Jun  0.0091959178 -0.2618837 0.2802756 1.0000000
+Nov-Jun  0.0490859519 -0.2064904 0.3046623 0.9999508
+Dec-Jun  0.1651623338 -0.1169863 0.4473110 0.7011107
+Aug-Jul -0.0503647438 -0.3574554 0.2567259 0.9999901
+Sep-Jul -0.0956663329 -0.3884658 0.1971332 0.9932464
+Oct-Jul -0.0961422981 -0.3782909 0.1860063 0.9904703
+Nov-Jul -0.0562522641 -0.3235404 0.2110359 0.9998785
+Dec-Jul  0.0598241178 -0.2329754 0.3526236 0.9999091
+Sep-Aug -0.0453015891 -0.3523923 0.2617891 0.9999967
+Oct-Aug -0.0457775543 -0.3427304 0.2511753 0.9999947
+Nov-Aug -0.0058875203 -0.2887587 0.2769837 1.0000000
+Dec-Aug  0.1101888616 -0.1969018 0.4172796 0.9856243
+Oct-Sep -0.0004759652 -0.2826246 0.2816727 1.0000000
+Nov-Sep  0.0394140689 -0.2278741 0.3067022 0.9999967
+Dec-Sep  0.1554904508 -0.1373090 0.4482899 0.8112587
+Nov-Oct  0.0398900341 -0.2156863 0.2954664 0.9999940
+Dec-Oct  0.1559664160 -0.1261822 0.4381151 0.7697062
+Dec-Nov  0.1160763819 -0.1512118 0.3833645 0.9425351</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(monthly_sent<span class="sc">$</span>month, monthly_sent<span class="sc">$</span>monthly_mean, <span class="at">main=</span><span class="st">"Monthly Mean Sentiment"</span>, <span class="at">xlab=</span><span class="st">"Month"</span>, <span class="at">ylab=</span><span class="st">"Sentiment"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="data_hypothesis_testing_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>monthly_country <span class="ot">&lt;-</span> df_all_countries <span class="sc">|&gt;</span> <span class="fu">group_by</span>(location, year_month) <span class="sc">|&gt;</span> <span class="fu">summarize</span>(<span class="at">monthly_mean =</span> <span class="fu">mean</span>(compound, <span class="at">na.rm=</span><span class="cn">TRUE</span>)) <span class="sc">|&gt;</span> <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'location'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a>monthly_country<span class="sc">$</span>time_index <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(monthly_country<span class="sc">$</span>year_month)</span>
+<span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>trend_country_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(monthly_mean <span class="sc">~</span> time_index <span class="sc">*</span> location, <span class="at">data=</span>monthly_country)</span>
+<span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(trend_country_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = monthly_mean ~ time_index * location, data = monthly_country)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.66521 -0.05173 -0.01014  0.03810  0.63178 
+
+Coefficients:
+                                        Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)                           -6.098e-01  1.187e+00  -0.514    0.608
+time_index                             3.407e-05  6.450e-05   0.528    0.598
+locationCanada                         1.775e+00  1.324e+00   1.341    0.181
+locationChina                          2.238e+00  3.609e+00   0.620    0.536
+locationIndia                          6.855e-01  1.402e+00   0.489    0.625
+locationItaly                          7.210e-01  1.465e+00   0.492    0.623
+locationRussian Federation             1.914e+00  1.284e+00   1.491    0.137
+locationUnited States                  1.461e+00  1.371e+00   1.066    0.288
+time_index:locationCanada             -9.595e-05  7.224e-05  -1.328    0.185
+time_index:locationChina              -1.132e-04  1.940e-04  -0.583    0.560
+time_index:locationIndia              -3.389e-05  7.657e-05  -0.443    0.658
+time_index:locationItaly              -3.748e-05  7.991e-05  -0.469    0.639
+time_index:locationRussian Federation -1.052e-04  6.998e-05  -1.503    0.134
+time_index:locationUnited States      -7.798e-05  7.479e-05  -1.043    0.298
+
+Residual standard error: 0.1675 on 251 degrees of freedom
+  (1 observation deleted due to missingness)
+Multiple R-squared:  0.08129,   Adjusted R-squared:  0.03371 
+F-statistic: 1.708 on 13 and 251 DF,  p-value: 0.05948</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>monthly_bias <span class="ot">&lt;-</span> df_all_countries <span class="sc">|&gt;</span> <span class="fu">group_by</span>(year_month) <span class="sc">|&gt;</span> <span class="fu">summarize</span>(<span class="at">monthly_mean =</span> <span class="fu">mean</span>(bias_score, <span class="at">na.rm=</span><span class="cn">TRUE</span>))</span>
+<span id="cb96-2"><a href="#cb96-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb96-3"><a href="#cb96-3" aria-hidden="true" tabindex="-1"></a>trend_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(monthly_mean <span class="sc">~</span> year_month, <span class="at">data=</span>monthly_bias)</span>
+<span id="cb96-4"><a href="#cb96-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(trend_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = monthly_mean ~ year_month, data = monthly_bias)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.90800 -0.21391 -0.08672  0.22146  1.06733 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)  
+(Intercept) -1.905e+00  1.073e+00  -1.776   0.0799 .
+year_month   1.134e-04  6.063e-05   1.870   0.0654 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.4537 on 74 degrees of freedom
+  (1 observation deleted due to missingness)
+Multiple R-squared:  0.04513,   Adjusted R-squared:  0.03223 
+F-statistic: 3.498 on 1 and 74 DF,  p-value: 0.06541</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MannKendall</span>(monthly_bias<span class="sc">$</span>monthly_mean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tau = -0.0567, 2-sided pvalue =0.46801</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a>monthly_bias<span class="sc">$</span>month <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">month</span>(monthly_bias<span class="sc">$</span>year_month), <span class="at">labels =</span> month.abb)</span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a>seasonal_anova_bias <span class="ot">&lt;-</span> <span class="fu">aov</span>(monthly_mean <span class="sc">~</span> month, <span class="at">data=</span>monthly_bias)</span>
+<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(seasonal_anova_bias)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            Df Sum Sq Mean Sq F value Pr(&gt;F)
+month       11  2.818  0.2562   1.248  0.275
+Residuals   64 13.135  0.2052               
+1 observation deleted due to missingness</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb102"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb102-1"><a href="#cb102-1" aria-hidden="true" tabindex="-1"></a><span class="fu">TukeyHSD</span>(seasonal_anova_bias)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Tukey multiple comparisons of means
+    95% family-wise confidence level
+
+Fit: aov(formula = monthly_mean ~ month, data = monthly_bias)
+
+$month
+                diff        lwr       upr     p adj
+Feb-Jan  0.563905901 -0.3232256 1.4510374 0.5861265
+Mar-Jan -0.201888892 -1.0890204 0.6852427 0.9997405
+Apr-Jan  0.115009607 -0.8154218 1.0454410 0.9999995
+May-Jan -0.150230294 -1.0050916 0.7046311 0.9999799
+Jun-Jan  0.108065455 -0.7467959 0.9629268 0.9999993
+Jul-Jan  0.027799894 -0.8593317 0.9149314 1.0000000
+Aug-Jan  0.100969342 -0.8294621 1.0314008 0.9999999
+Sep-Jan -0.181524654 -1.0686562 0.7056069 0.9999078
+Oct-Jan  0.170830947 -0.6840304 1.0256923 0.9999270
+Nov-Jan -0.041839478 -0.8516761 0.7679971 1.0000000
+Dec-Jan  0.064095467 -0.8230361 0.9512270 1.0000000
+Mar-Feb -0.765794793 -1.6529263 0.1213368 0.1559625
+Apr-Feb -0.448896294 -1.3793277 0.4815351 0.8887794
+May-Feb -0.714136195 -1.5689975 0.1407252 0.1911290
+Jun-Feb -0.455840446 -1.3107018 0.3990209 0.8072557
+Jul-Feb -0.536106006 -1.4232376 0.3510255 0.6586747
+Aug-Feb -0.462936559 -1.3933680 0.4674949 0.8671544
+Sep-Feb -0.745430554 -1.6325621 0.1417010 0.1845660
+Oct-Feb -0.393074954 -1.2479363 0.4617864 0.9169247
+Nov-Feb -0.605745379 -1.4155820 0.2040912 0.3369855
+Dec-Feb -0.499810434 -1.3869420 0.3873211 0.7480959
+Apr-Mar  0.316898499 -0.6135329 1.2473299 0.9905058
+May-Mar  0.051658598 -0.8032028 0.9065199 1.0000000
+Jun-Mar  0.309954347 -0.5449070 1.1648157 0.9844065
+Jul-Mar  0.229688786 -0.6574428 1.1168203 0.9991256
+Aug-Mar  0.302858234 -0.6275732 1.2332897 0.9934542
+Sep-Mar  0.020364239 -0.8667673 0.9074958 1.0000000
+Oct-Mar  0.372719839 -0.4821415 1.2275812 0.9410021
+Nov-Mar  0.160049414 -0.6497872 0.9698860 0.9999346
+Dec-Mar  0.265984359 -0.6211472 1.1531159 0.9967445
+May-Apr -0.265239901 -1.1649555 0.6344757 0.9971899
+Jun-Apr -0.006944152 -0.9066598 0.8927715 1.0000000
+Jul-Apr -0.087209713 -1.0176411 0.8432217 1.0000000
+Aug-Apr -0.014040265 -0.9858442 0.9577637 1.0000000
+Sep-Apr -0.296534261 -1.2269657 0.6338972 0.9945132
+Oct-Apr  0.055821340 -0.8438943 0.9555369 1.0000000
+Nov-Apr -0.156849085 -1.0138996 0.7002014 0.9999697
+Dec-Apr -0.050914140 -0.9813456 0.8795173 1.0000000
+Jun-May  0.258295749 -0.5630285 1.0796200 0.9950971
+Jul-May  0.178030188 -0.6768312 1.0328915 0.9998904
+Aug-May  0.251199636 -0.6485160 1.1509152 0.9982638
+Sep-May -0.031294360 -0.8861557 0.8235670 1.0000000
+Oct-May  0.321061241 -0.5002630 1.1423855 0.9724789
+Nov-May  0.108390816 -0.6659611 0.8827427 0.9999981
+Dec-May  0.214325761 -0.6405356 1.0691871 0.9993511
+Jul-Jun -0.080265561 -0.9351269 0.7745958 1.0000000
+Aug-Jun -0.007096113 -0.9068117 0.8926195 1.0000000
+Sep-Jun -0.289590108 -1.1444515 0.5652712 0.9909130
+Oct-Jun  0.062765492 -0.7585587 0.8840897 1.0000000
+Nov-Jun -0.149904933 -0.9242568 0.6244470 0.9999468
+Dec-Jun -0.043969988 -0.8988313 0.8108914 1.0000000
+Aug-Jul  0.073169447 -0.8572620 1.0036009 1.0000000
+Sep-Jul -0.209324548 -1.0964561 0.6778070 0.9996335
+Oct-Jul  0.143031053 -0.7118303 0.9978924 0.9999878
+Nov-Jul -0.069639372 -0.8794760 0.7401972 1.0000000
+Dec-Jul  0.036295573 -0.8508360 0.9234271 1.0000000
+Sep-Aug -0.282493995 -1.2129254 0.6479374 0.9963706
+Oct-Aug  0.069861606 -0.8298540 0.9695772 1.0000000
+Nov-Aug -0.142808820 -0.9998593 0.7142417 0.9999883
+Dec-Aug -0.036873875 -0.9673053 0.8935575 1.0000000
+Oct-Sep  0.352355601 -0.5025057 1.2072170 0.9597666
+Nov-Sep  0.139685175 -0.6701514 0.9495218 0.9999834
+Dec-Sep  0.245620121 -0.6415114 1.1327517 0.9983896
+Nov-Oct -0.212670425 -0.9870223 0.5616815 0.9985025
+Dec-Oct -0.106735480 -0.9615968 0.7481259 0.9999994
+Dec-Nov  0.105934945 -0.7039017 0.9157715 0.9999991</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb104"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb104-1"><a href="#cb104-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(monthly_bias<span class="sc">$</span>month, monthly_bias<span class="sc">$</span>monthly_mean, <span class="at">main=</span><span class="st">"Monthly Mean Bias Scores"</span>, <span class="at">xlab=</span><span class="st">"Month"</span>, <span class="at">ylab=</span><span class="st">"Bias Scores"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="data_hypothesis_testing_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a>monthly_country <span class="ot">&lt;-</span> df_all_countries <span class="sc">|&gt;</span> <span class="fu">group_by</span>(location, year_month) <span class="sc">|&gt;</span> <span class="fu">summarize</span>(<span class="at">monthly_mean =</span> <span class="fu">mean</span>(bias_score, <span class="at">na.rm=</span><span class="cn">TRUE</span>)) <span class="sc">|&gt;</span> <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'location'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>monthly_country<span class="sc">$</span>time_index <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(monthly_country<span class="sc">$</span>year_month)</span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a>trend_country_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(monthly_mean <span class="sc">~</span> time_index <span class="sc">*</span> location, <span class="at">data=</span>monthly_country)</span>
+<span id="cb107-4"><a href="#cb107-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb107-5"><a href="#cb107-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(trend_country_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = monthly_mean ~ time_index * location, data = monthly_country)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.23894 -0.16719 -0.02041  0.16536  1.18425 
+
+Coefficients:
+                                        Estimate Std. Error t value Pr(&gt;|t|)  
+(Intercept)                           -5.3212928  3.2744125  -1.625   0.1054  
+time_index                             0.0002866  0.0001779   1.611   0.1084  
+locationCanada                         7.5192826  3.6504451   2.060   0.0404 *
+locationChina                          8.5822344  9.9550858   0.862   0.3895  
+locationIndia                          5.8314855  3.8675558   1.508   0.1329  
+locationItaly                          4.1400604  4.0398268   1.025   0.3064  
+locationRussian Federation             4.3397165  3.5400477   1.226   0.2214  
+locationUnited States                  6.2322722  3.7815518   1.648   0.1006  
+time_index:locationCanada             -0.0004016  0.0001992  -2.016   0.0449 *
+time_index:locationChina              -0.0004637  0.0005350  -0.867   0.3869  
+time_index:locationIndia              -0.0002982  0.0002112  -1.412   0.1592  
+time_index:locationItaly              -0.0002240  0.0002204  -1.016   0.3104  
+time_index:locationRussian Federation -0.0002271  0.0001930  -1.176   0.2406  
+time_index:locationUnited States      -0.0003334  0.0002063  -1.616   0.1073  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.4619 on 251 degrees of freedom
+  (1 observation deleted due to missingness)
+Multiple R-squared:  0.08675,   Adjusted R-squared:  0.03945 
+F-statistic: 1.834 on 13 and 251 DF,  p-value: 0.03853</code></pre>
+</div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
