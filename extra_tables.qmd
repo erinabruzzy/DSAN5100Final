@@ -1,0 +1,52 @@
+# Code to make Extra Tables for Report, etc
+
+```{r}
+# load packages
+library(dplyr)
+library(arrow)
+library(stringr)
+```
+
+```{r}
+# load us data 
+us_df <- read_parquet("data/us_data_final.parquet")
+```
+
+```{r}
+# select biased headline for table 
+biased = us_df |> filter(bias_category == "Biased", bias_score>0.9) |> select(new_title, bias_category, bias_score)
+biased[305,]
+biased[305,]$new_title
+
+# select nonbiased headline for table
+nonbias = us_df |> filter(bias_category == "Non-biased", bias_score < -0.9) |> select(new_title, bias_category, bias_score)
+nonbias[264,]
+nonbias[264,]$new_title
+
+# select positive headline for table 
+pos = us_df |> filter(sentiment_category == "positive", compound > 0.7) |> select(new_title, sentiment_category, compound)
+pos[43,]
+pos[43,]$new_title
+
+# select neutral headline for table
+neu = us_df |> filter(sentiment_category == "neutral") |> select(new_title, sentiment_category, compound)
+neu[13,]
+neu[13,]$new_title
+
+# select negative headline for table
+neg = us_df |> filter(sentiment_category == "negative", compound < -0.5) |> select(new_title, sentiment_category, compound)
+neg[23,]
+neg[23,]$new_title
+```
+
+| Headline | Bias Category | Bias Score |
+|----------|----------|----------|
+| Parents urged to test their symptomatic children for COVID-19 following ‘troubling’ reports | Biased | 0.969 |
+| Available at Costco: Your own private jet membership | Non-biased | -0.905 |
+
+| Headline | Sentiment Category | Compound Sentiment Score |
+|----------|----------|----------|
+| How Trump's favorite tech company could win TikTok | positive | 0.778 |
+| The secret to this fruit's mysterious blue color | neutral | 0 |
+| Watch Angry Motorcyclist Purposely Smack Tesla Model 3 Mirror | negative | -0.511 |
+
